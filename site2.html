@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector - Интеллектуальный голосовой помощник</title>
+    <link rel="icon" href="ico.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css    ">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js    "></script>
+    <style>
+        /* CSS переменные */
+        :root {
+            --starFieldWidth: 2560;
+            --starFieldHeight: 2560;
+            --starStartOffset: 600px;
+            --starOneScrollDuration: 100s;
+            --starTwoScrollDuration: 125s;
+            --starThreeScrollDuration: 175s;
+            --numStarOneStars: 1700;
+            --numStarTwoStars: 700;
+            --numStarThreeStars: 200;
+            --numShootingStars: 10;
+            --width: 100%;
+            --primary: #00D4FF;
+            --secondary: #0099FF;
+            --accent: #FF2E63;
+            --dark: #0A0A0F;
+            --light: #FFFFFF;
+            --gray: #8A8A9D;
+        }
+
+        /* Сброс стилей */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow-x: hidden;
+            color: var(--light);
+            background: linear-gradient(to bottom, #020107 0%, #201b46 100%);
+        }
+
+        /* Контейнер для звездного неба */
+        .star-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Стили для звезд */
+        .stars, .stars1, .stars2 {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .stars {
+            z-index: 1;
+            width: 1px;
+            height: 1px;
+            border-radius: 50%;
+            background: transparent;
+            animation: animStar var(--starOneScrollDuration) linear infinite;
+        }
+
+        .stars1 {
+            z-index: 2;
+            width: 2px;
+            height: 2px;
+            border-radius: 50%;
+            background: transparent;
+            animation: animStar var(--starTwoScrollDuration) linear infinite;
+        }
+
+        .stars2 {
+            z-index: 3;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: transparent;
+            animation: animStar var(--starThreeScrollDuration) linear infinite;
+        }
+
+        .shooting-stars {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,1));
+    animation: animShootingStar 3s linear forwards; /* ⚠️ без infinite! */
+    opacity: 0; /* изначально невидима */
+    z-index: 4;
+}
+
+        /* Анимации звезд */
+        @keyframes animStar {
+            from {
+                transform: translateY(0px);
+            }
+            to {
+                transform: translateY(calc(-1 * var(--starFieldHeight) * 1px)) translateX(calc(-1 * var(--starFieldWidth) * 1px));
+            }
+        }
+
+        @keyframes animShootingStar {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) rotate(-45deg);
+                height: 5px;
+            }
+            1% {
+                opacity: 1;
+                /* Начинаем движение */
+                transform: translate(0, 0) rotate(-45deg);
+                height: 5px;
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(calc(-1 * var(--starFieldHeight) * 1px))
+                           translateX(calc(-1 * var(--starFieldWidth) * 1px))
+                           rotate(-45deg);
+                height: 800px;
+            }
+        }
+
+        /* Canvas для эффекта частиц */
+        #demo-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none; /* <--- ВАЖНО */
+        }
+
+        /* Основные секции */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5rem 2rem;
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Навигация */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            background: rgba(10, 10, 15, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Свечение курсора */
+        .cursor-glow {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(
+                circle,
+                rgba(0, 212, 255, 0.3) 0%,
+                rgba(0, 212, 255, 0) 70%
+            );
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            opacity: 0.6;
+            filter: blur(40px);
+            transition: width 0.3s, height 0.3s, opacity 0.3s;
+            mix-blend-mode: screen;
+            top: 0;
+            left: 0;
+        }
+
+/* При наведении на кнопки — усиление свечения */
+.btn:hover ~ .cursor-glow,
+.nav-links a:hover ~ .cursor-glow,
+.feature-card:hover ~ .cursor-glow {
+    width: 240px;
+    height: 240px;
+    opacity: 0.8;
+}
+        .logo i {
+            margin-right: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Главный экран */
+        .hero {
+            text-align: center;
+            padding-top: 8rem;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-image {
+            width: 300px;
+            height: 300px;
+            margin: 2rem auto;
+            position: relative;
+        }
+
+        .hero-orb {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.2) 0%, transparent 70%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .hero-orb i {
+            font-size: 8rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Кнопки */
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Сетка возможностей */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Секция загрузки */
+        .download-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .download-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .download-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .platform-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .windows .platform-icon { color: #0078D7; }
+        .macos .platform-icon { color: #999999; }
+        .linux .platform-icon { color: #F1502F; }
+
+        /* Футер */
+        footer {
+            background: rgba(5, 5, 8, 0.9);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Анимации при скролле */
+        .scroll-element {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-element.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .scroll-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.8s ease;
+        }
+
+        .scroll-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Свечение вокруг курсора -->
+    <div class="cursor-glow"></div>
+    <!-- Звездный фон -->
+    <div class="star-container">
+        <div class="stars"></div>
+        <div class="stars1"></div>
+        <div class="stars2"></div>
+        <div class="shooting-stars"></div>
+    </div>
+
+    <!-- Canvas для эффекта частиц -->
+    <canvas id="demo-canvas"></canvas>
+
+    <!-- Навигация -->
+    <nav>
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            Vector
+        </div>
+        <div class="nav-links">
+            <a href="#home">Главная</a>
+            <a href="#features">Возможности</a>
+            <a href="#download">Скачать</a>
+        </div>
+    </nav>
+
+    <!-- Главный экран -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h1 class="scroll-element">Vector AI</h1>
+            <p class="scroll-element">Интеллектуальный голосовой помощник нового поколения</p>
+            <div class="hero-image scroll-element">
+                <div class="hero-orb">
+                    <i class="fas fa-robot"></i>
+                </div>
+            </div>
+            <a href="#download" class="btn scroll-element" style="text-decoration: none; color: #0A0A0F; display: inline-block;" >Скачать</a>
+        </div>
+    </section>
+
+    <!-- Возможности -->
+    <section id="features">
+        <div class="container">
+            <h2 class="scroll-element" style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem;">Возможности Vector</h2>
+
+            <div class="features-grid">
+                <div class="feature-card scroll-left">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Искусственный интеллект</h3>
+                    <p>Мощные алгоритмы машинного обучения для понимания контекста</p>
+                </div>
+
+                <div class="feature-card scroll-element">
+                    <div class="feature-icon">
+                        <i class="fas fa-microphone-alt"></i>
+                    </div>
+                    <h3>Голосовое управление</h3>
+                    <p>Выполнение ваших указаний и задач</p>
+                </div>
+
+                <div class="feature-card scroll-right">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Конфиденциальность</h3>
+                    <p>Ваши данные защищены и никогда не передаются третьим лицам</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+   <!-- Общее описание Vector -->
+<section id="what-is-vector" style="background: rgba(10, 10, 15, 0.8); padding: 5rem 2rem; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+    <div class="container">
+        <h2 class="scroll-element" style="text-align: center; font-size: 2.8rem; margin-bottom: 3rem; color: var(--primary);">Что такое Vector?</h2>
+        <div class="scroll-element" style="max-width: 900px; margin: 0 auto; text-align: center; font-size: 1.4rem; color: var(--gray); line-height: 1.8;">
+            <p>Vector — это <strong>голосовой ассистент нового поколения</strong>.
+            Он понимает речь, выполняет ваши задания, управляя вашим ПК, открывая файлы, сайты и программы по голосу и даже
+            пишет текст.
+            <strong>Не просто программа — ваш личный помощник.</strong></p>
+        </div>
+    </div>
+</section>
+
+<!-- Скачать -->
+<section id="download">
+    <div class="container">
+        <h2 class="scroll-element" style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem;">Скачайте Vector прямо сейчас</h2>
+
+       <div class="download-cards" style="gap: 3rem;">
+            <!-- Vector (Бесплатная) -->
+            <div class="download-card windows scroll-left" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="platform-icon" style="margin-bottom: 1rem;">
+                    <i class="fab fa-windows"></i>
+                </div>
+                <h3 style="color: var(--light); font-size: 1.6rem;">Vector</h3>
+                <p style="color: var(--gray); font-size: 1.1rem; margin: 1rem 0;">Бесплатная версия</p>
+                <a href="https://github.com/maksim52228/VectorV7/releases/download/v1.0.7/VectorV7.exe"
+                   download="VectorV7.exe"
+                   class="btn"
+                   style="width: 100%; margin-top: 1.5rem; display: inline-block; text-align: center; text-decoration: none; color: #0A0A0F;">
+                    Скачать бесплатно
+                </a>
+            </div>
+
+            <!-- VectorPro (Платная) -->
+
+            <div class="download-card windows scroll-right" style="background: rgba(255, 46, 99, 0.1); border: 1px solid var(--accent); box-shadow: 0 0 30px rgba(255, 46, 99, 0.3);">
+                <div class="platform-icon" style="color: var(--accent); margin-bottom: 1rem;">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h3 style="color: var(--accent); font-size: 1.6rem;">VectorPro</h3>
+                <p style="color: var(--gray); font-size: 1.1rem; margin: 1rem 0;">Премиум версия</p>
+                <button id="openPaymentModal" class="btn"
+                        style="width: 100%; margin-top: 1.5rem; background: linear-gradient(135deg, var(--accent), #cc1e55); color: white; display: inline-block; text-align: center; border: none; cursor: pointer;">
+                    Скачать Pro
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Подробные сравнения возможностей -->
+<section id="feature-comparison" style="
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, rgba(10, 10, 20, 0.7) 0%, rgba(5, 5, 10, 0.9) 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+">
+    <!-- Декоративный градиентный акцент -->
+    <div style="
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+        z-index: 0;
+        pointer-events: none;
+    "></div>
+
+    <div class="container" style="position: relative; z-index: 2;">
+        <h2 class="scroll-element" style="
+            text-align: center;
+            font-size: 2.8rem;
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        ">
+            Сравнение возможностей
+        </h2>
+
+        <div class="features-grid" style="
+            gap: 2.5rem;
+            margin-top: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        ">
+
+            <!-- Бесплатная версия -->
+            <div class="feature-card scroll-left" style="
+                background: rgba(15, 15, 25, 0.6);
+                backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 20px;
+                padding: 2.2rem;
+                text-align: center;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                position: relative;
+                overflow: hidden;
+            ">
+                <!-- Декор слева -->
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 4px;
+                    height: 100%;
+                    background: linear-gradient(to bottom, var(--primary), var(--secondary));
+                "></div>
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 6px;
+                    background: linear-gradient(to right, var(--primary), var(--secondary));
+                "></div>
+
+                <div class="feature-icon" style="
+                    font-size: 2.8rem;
+                    margin-bottom: 1.2rem;
+                    color: var(--primary);
+                ">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h3 style="
+                    color: var(--light);
+                    font-size: 1.8rem;
+                    margin-bottom: 1.5rem;
+                    font-weight: 700;
+                ">Vector (Бесплатно)</h3>
+
+                <ul style="
+                    margin: 1.5rem 0;
+                    padding: 0 1rem;
+                    color: var(--gray);
+                    font-size: 1.05rem;
+                    line-height: 1.8;
+                    text-align: left;
+                    list-style: none;
+                ">
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Голосовое управление</li>
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Открытие сайтов (<strong>только 1</strong>)</li>
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Открытие файлов и папок</li>
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Запуск программ</li>
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Поиск в интернете</li>
+                    <li style="margin-bottom: 0.8rem; color: #a0f0a0;">✅ Диктовка</li>
+                    <li style="margin-bottom: 0.8rem; color: #ff6b6b;">❌ Количество своих сайтов ограничено</li>
+                    <li style="margin-bottom: 0.8rem; color: #ff6b6b;">❌ Нет смены имени</li>
+
+                </ul>
+
+            </div>
+
+            <!-- Премиум версия (акцентная) -->
+            <div class="feature-card scroll-right" style="
+                background: rgba(20, 10, 30, 0.7);
+                backdrop-filter: blur(16px);
+                border: 1px solid var(--accent);
+                border-radius: 20px;
+                padding: 2.2rem;
+                text-align: center;
+                transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 0 30px rgba(255, 46, 99, 0.25);
+            ">
+                <!-- Акцентная рамка сверху -->
+                <div style="
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 6px;
+                    background: linear-gradient(90deg, var(--accent), #ff6b9d);
+                "></div>
+
+                <div class="feature-icon" style="
+                    font-size: 2.8rem;
+                    margin-bottom: 1.2rem;
+                    background: linear-gradient(135deg, var(--accent), #ff6b9d);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                ">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h3 style="
+                    color: var(--accent);
+                    font-size: 1.8rem;
+                    margin-bottom: 1.5rem;
+                    font-weight: 800;
+                ">VectorPro</h3>
+
+                <ul style="
+                    margin: 1.5rem 0;
+                    padding: 0 1rem;
+                    color: var(--light);
+                    font-size: 1.05rem;
+                    line-height: 1.8;
+                    text-align: left;
+                    list-style: none;
+                ">
+                    <li style="margin-bottom: 0.8rem;"><strong>🚀 Неограниченные сайты</strong></li>
+                    <li style="margin-bottom: 0.8rem;"><strong>🎙️ Диктовка текста</strong></li>
+                    <li style="margin-bottom: 0.8rem;"><strong>🔁 Автозапуск с Windows</strong></li>
+                    <li style="margin-bottom: 0.8rem;"><strong>🗣️ Кастомные имена</strong></li>
+                    <li style="margin-bottom: 0.8rem;"><strong>🔍 Умный поиск по файлам</strong></li>
+                </ul>
+
+            </div>
+
+        </div>
+        <p style="
+                    font-size: 1rem;
+                    text-align: center;
+                    color: var(--gray);
+                    margin-top: 1.8rem;
+                    font-style: italic;
+                ">Будущее — уже сегодня</p>
+
+
+    </div>
+</section>
+
+    <!-- Футер -->
+    <footer>
+        <div class="container">
+            <div class="logo" style="font-size: 1.5rem; margin-bottom: 1rem;">
+                <i class="fas fa-robot"></i>
+                Vector AI
+            </div>
+
+        </div>
+    </footer>
+
+<script>
+// === Свечение курсора ===
+const cursorGlow = document.querySelector('.cursor-glow');
+let mouseX = 0;
+let mouseY = 0;
+let glowX = 0;
+let glowY = 0;
+
+document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+});
+
+function animateGlow() {
+    glowX += (mouseX - glowX) * 0.1;
+    glowY += (mouseY - glowY) * 0.1;
+    cursorGlow.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
+    requestAnimationFrame(animateGlow);
+}
+animateGlow();
+
+// === Функции звёзд ===
+function createStars(n, width, height) {
+    let stars = "";
+    for (let i = 0; i < n; i++) {
+        const x = Math.floor(Math.random() * width);
+        const y = Math.floor(Math.random() * height);
+        stars += `${x}px ${y}px #FFF, `;
+    }
+    return stars.slice(0, -2);
+}
+
+function createShootingStar() {
+    const star = document.createElement('div');
+    star.className = 'shooting-stars';
+    const startX = Math.random() * window.innerWidth;
+    const startY = window.innerHeight + 100;
+    star.style.left = `${startX}px`;
+    star.style.top = `${startY}px`;
+    document.querySelector('.star-container').appendChild(star);
+    setTimeout(() => {
+        if (star.parentNode) star.parentNode.removeChild(star);
+    }, 3000);
+}
+
+setInterval(() => {
+    if (Math.random() > 0.7) createShootingStar();
+}, 2000);
+
+// === Анимации скролла ===
+function initScrollAnimations() {
+    const elements = document.querySelectorAll('.scroll-element, .scroll-left, .scroll-right');
+    function checkScroll() {
+        elements.forEach(element => {
+            const elementTop = element.getBoundingClientRect().top;
+            const elementBottom = element.getBoundingClientRect().bottom;
+            const windowHeight = window.innerHeight;
+            const isVisible = elementTop < windowHeight * 0.9 && elementBottom > windowHeight * 0.1;
+            if (isVisible) {
+                element.classList.add('visible');
+            } else {
+                if (elementBottom < 0 || elementTop > windowHeight) {
+                    element.classList.remove('visible');
+                }
+            }
+        });
+    }
+    window.addEventListener('load', checkScroll);
+    window.addEventListener('scroll', checkScroll);
+    window.addEventListener('resize', checkScroll);
+    checkScroll();
+}
+
+function initSmoothScroll() {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+}
+
+// === 🟢 ВСЁ, что зависит от HTML-элементов — только внутри DOMContentLoaded ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация звёзд
+    const starFieldWidth = 2560;
+    const starFieldHeight = 2560;
+    const stars = document.querySelector('.stars');
+    const stars1 = document.querySelector('.stars1');
+    const stars2 = document.querySelector('.stars2');
+    if (stars) stars.style.boxShadow = createStars(1700, starFieldWidth, starFieldHeight);
+    if (stars1) stars1.style.boxShadow = createStars(700, starFieldWidth, starFieldHeight);
+    if (stars2) stars2.style.boxShadow = createStars(200, starFieldWidth, starFieldHeight);
+
+    const shootingStarsContainer = document.querySelector('.star-container');
+    if (shootingStarsContainer) {
+        for (let i = 0; i < 10; i++) {
+            const shootingStar = document.createElement('div');
+            shootingStar.className = 'shooting-stars';
+            shootingStar.style.left = `${Math.random() * 100}%`;
+            shootingStar.style.top = `${Math.random() * 100}%`;
+            shootingStar.style.animationDelay = `${Math.random() * 20}s`;
+            shootingStarsContainer.appendChild(shootingStar);
+        }
+    }
+
+    // Анимации
+    initScrollAnimations();
+    initSmoothScroll();
+
+    // === 💳 СИСТЕМА ОПЛАТЫ — РАБОТАЕТ БЕЗОПАСНО ===
+    const openPaymentModal = document.getElementById('openPaymentModal');
+    const paymentModal = document.getElementById('paymentModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const userNameInput = document.getElementById('userNameInput');
+    const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+    const afterSubmitMessage = document.getElementById('afterSubmitMessage');
+    const orderIdDisplay = document.getElementById('orderIdDisplay');
+    const checkDownloadBtn = document.getElementById('checkDownloadBtn');
+
+    if (openPaymentModal && paymentModal && closeModalBtn && userNameInput && submitPaymentBtn && afterSubmitMessage && orderIdDisplay && checkDownloadBtn) {
+        openPaymentModal.addEventListener('click', () => {
+            paymentModal.style.display = 'flex';
+            afterSubmitMessage.style.display = 'none';
+            userNameInput.value = '';
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            paymentModal.style.display = 'none';
+        });
+
+        submitPaymentBtn.addEventListener('click', async () => {
+            const name = userNameInput.value.trim();
+            if (!name) {
+                alert('Пожалуйста, введите ваше имя.');
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:5000/submit-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                const data = await res.json();
+                if (data.order_id) {
+                    let currentOrderId = data.order_id;
+                    orderIdDisplay.textContent = data.order_id;
+                    afterSubmitMessage.style.display = 'block';
+                } else {
+                    alert('Ошибка отправки заявки.');
+                }
+            } catch (err) {
+                alert('Не удаётся подключиться к серверу оплаты. Убедитесь, что он запущен.');
+                console.error(err);
+            }
+        });
+
+        checkDownloadBtn.addEventListener('click', async () => {
+            const orderIdText = orderIdDisplay.textContent;
+            if (!orderIdText) {
+                alert('Нет активной заявки.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5000/check-status/${orderIdText}`);
+                const result = await res.json();
+
+                if (result.status === 'confirmed') {
+                    window.location.href = `http://localhost:5000/download/${orderIdText}`;
+                } else if (result.status === 'pending') {
+                    alert('Оплата ещё не подтверждена. Попробуйте через минуту.');
+                } else {
+                    alert('Заявка не найдена или отклонена.');
+                }
+            } catch (err) {
+                alert('Ошибка при проверке статуса.');
+                console.error(err);
+            }
+        });
+    } else {
+        console.warn('⚠️ Не все элементы платежной формы найдены. Проверьте HTML.');
+    }
+});
+</script>
+<!-- Модальное окно оплаты -->
+<div id="paymentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(5,5,10,0.95); z-index:9999; justify-content:center; align-items:center; flex-direction:column; padding:2rem; text-align:center;">
+    <div style="max-width:500px; width:100%; background:rgba(15,15,25,0.7); border:1px solid var(--accent); border-radius:20px; padding:2rem; position:relative;">
+        <button id="closeModalBtn" style="position:absolute; top:1rem; right:1rem; background:transparent; border:none; color:var(--gray); font-size:1.5rem; cursor:pointer;">&times;</button>
+        <h3 style="color:var(--accent); margin-bottom:1.5rem;">Оплата VectorPro</h3>
+        <p style="color:var(--gray); margin-bottom:1.5rem;">Введите ваше имя, чтобы мы могли подтвердить оплату:</p>
+        <input type="text" id="userNameInput" placeholder="Ваше имя" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; margin-bottom:1.5rem;">
+
+        <p style="color:var(--gray); margin:1.5rem 0;">Отсканируйте QR-код для оплаты:</p>
+        <img src="siteicon.jpg" alt="QR для оплаты" style="width:200px; height:200px; border:2px solid var(--secondary); border-radius:10px; margin:1rem auto; display:block;">
+
+        <button id="submitPaymentBtn" class="btn" style="width:100%; margin-top:1.5rem; background:linear-gradient(135deg, var(--primary), var(--secondary)); color:#0A0A0F; border:none; padding:12px; border-radius:50px;">
+            Я оплатил
+        </button>
+
+        <div id="afterSubmitMessage" style="display:none; margin-top:1.5rem; color:var(--gray);">
+            <p>Ваш ID заявки: <strong id="orderIdDisplay"></strong></p>
+            <p>После подтверждения оплаты нажмите:</p>
+            <button id="checkDownloadBtn" class="btn" style="width:100%; margin-top:1rem; background:linear-gradient(135deg, var(--accent), #cc1e55); color:white; border:none; padding:12px; border-radius:50px;">
+                Проверить и скачать
+            </button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
