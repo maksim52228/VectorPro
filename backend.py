@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify, send_from_directory,send_file
 from flask_cors import CORS  # <-- импортируем
 import os
-from dotenv import load_dotenv
 import requests
 
-load_dotenv()
+
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 YOUR_TELEGRAM_ID = os.getenv('YOUR_TELEGRAM_ID')  # ← Теперь будет строка, а не None
@@ -85,6 +84,3 @@ def telegram_webhook():
                 orders[order_id]['status'] = 'rejected'
                 send_telegram_message(int(YOUR_TELEGRAM_ID), f"❌ Заявка {order_id} отклонена.")
     return 'OK'
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
