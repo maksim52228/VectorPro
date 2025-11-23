@@ -897,7 +897,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const res = await fetch('http://localhost:5000/submit-payment', {
+                const res = await fetch('https://vectorpro.onrender.com/submit-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
@@ -925,11 +925,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const res = await fetch(`http://localhost:5000/check-status/${orderIdText}`);
+                const res = await fetch(`https://vectorpro.onrender.com/check-status/${orderIdText}`);
                 const result = await res.json();
 
                 if (result.status === 'confirmed') {
-                    window.location.href = `http://localhost:5000/download/${orderIdText}`;
+                    window.location.href = `https://vectorpro.onrender.com/download/${orderIdText}`;
                 } else if (result.status === 'pending') {
                     alert('Оплата ещё не подтверждена. Попробуйте через минуту.');
                 } else {
