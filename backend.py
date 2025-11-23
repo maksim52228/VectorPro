@@ -84,3 +84,7 @@ def telegram_webhook():
                 orders[order_id]['status'] = 'rejected'
                 send_telegram_message(int(YOUR_TELEGRAM_ID), f"❌ Заявка {order_id} отклонена.")
     return 'OK'
+    
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
