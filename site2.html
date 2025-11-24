@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <!-- Описание сайта (до 160 символов) -->
+        <!-- Описание сайта (до 160 символов) -->
     <meta name="description" content="Vector — интеллектуальный голосовой помощник нового поколения для Windows. Управление ПК, диктовка, открытие программ и сайтов по голосу.">
-    
+
     <!-- Ключевые слова (опционально, Google их почти не использует, но Яндекс — да) -->
     <meta name="keywords" content="голосовой помощник, Vector, VectorPro, AI, Windows, голосовое управление, диктовка, ассистент">
-    
+
     <!-- Открытые графы (для соцсетей и поиска) -->
     <meta property="og:title" content="Vector AI — Голосовой помощник нового поколения">
     <meta property="og:description" content="Управляйте ПК голосом. Открывайте сайты, файлы, программы. Диктуйте текст.">
     <meta property="og:image" content="https://vectorpro.onrender.com/siteicon.jpg">
     <meta property="og:url" content="https://vectorpro.onrender.com">
     <meta property="og:type" content="website">
-    
+
     <!-- Канонический URL (чтобы избежать дублей) -->
     <link rel="canonical" href="https://vectorpro.onrender.com">
     <meta charset="UTF-8">
@@ -912,7 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const res = await fetch('https://vectorpro.onrender.com/submit-payment', {
+                const res = await fetch('http://localhost:5000/submit-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name })
@@ -940,11 +940,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             try {
-                const res = await fetch(`https://vectorpro.onrender.com/check-status/${orderIdText}`);
+                const res = await fetch(`http://localhost:5000/check-status/${orderIdText}`);
                 const result = await res.json();
 
                 if (result.status === 'confirmed') {
-                    window.location.href = `https://vectorpro.onrender.com/download/${orderIdText}`;
+                    window.location.href = `http://localhost:5000/download/${orderIdText}`;
                 } else if (result.status === 'pending') {
                     alert('Оплата ещё не подтверждена. Попробуйте через минуту.');
                 } else {
