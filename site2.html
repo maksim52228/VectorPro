@@ -903,6 +903,7 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModalBtn.addEventListener('click', () => {
             paymentModal.style.display = 'none';
         });
+        let checkInterval = null;
 
         submitPaymentBtn.addEventListener('click', async () => {
             const name = userNameInput.value.trim();
@@ -923,6 +924,43 @@ document.addEventListener('DOMContentLoaded', function() {
                     let currentOrderId = data.order_id;
                     orderIdDisplay.textContent = data.order_id;
                     afterSubmitMessage.style.display = 'block';
+                    // Скрываем кнопку "Я оплатил"
+                    submitPaymentBtn.style.display = 'none';
+                    // Начинаем автоматическую проверку статуса
+                    let attempts = 0;
+                    const maxAttempts = 30;
+                    checkInterval = setInterval(async () => {
+                        attempts++;
+                        try {
+                            const statusRes = await fetch(`https://vectorpro.onrender.com/check-status/${orderId}`);
+                            const result = await statusRes.json();
+
+                            if (result.status === 'confirmed') {
+                                clearInterval(checkInterval);
+                                // Показываем кнопку скачивания или сразу редиректим
+                                const downloadBtn = document.createElement('button');
+                                downloadBtn.textContent = 'Скачать VectorPro';
+                                downloadBtn.className = 'btn';
+                                downloadBtn.style.width = '100%';
+                                downloadBtn.style.marginTop = '1rem';
+                                downloadBtn.style.background = 'linear-gradient(135deg, var(--accent), #cc1e55)';
+                                downloadBtn.style.color = 'white';
+                                downloadBtn.onclick = () => {
+                                    window.location.href = `https://vectorpro.onrender.com/download/${orderId}`;
+                                };
+                                afterSubmitMessage.appendChild(downloadBtn);
+                            } else if (attempts >= maxAttempts || result.status === 'rejected') {
+                                clearInterval(checkInterval);
+                                alert('Оплата не подтверждена. Пожалуйста, свяжитесь с поддержкой.');
+                            }
+                        } catch (err) {
+                            console.warn('Ошибка при проверке статуса:', err);
+                            // Можно не прерывать, дать ещё шанс
+                        }
+                    }, 10000); // проверяем каждые 10 секунд
+
+
+
                 } else {
                     alert('Ошибка отправки заявки.');
                 }
