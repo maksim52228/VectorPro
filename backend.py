@@ -52,7 +52,7 @@ def send_support_message():
     # 💡 Опционально: уведомить админа в Telegram
     send_telegram_message(
         YOUR_TELEGRAM_ID,
-        f"📩 Новое сообщение в чате {chat_id}:\n\n{text}"
+        f"📩 Новое сообщение в чате `{chat_id}`:\n\n{text}"
     )
 
     return jsonify({"status": "ok"})
@@ -77,7 +77,7 @@ def start_support_chat():
         json.dump(chat_data, f, ensure_ascii=False, indent=2)
 
     # Уведомление админу
-    text = f"💬 Новый чат поддержки!\nID: {chat_id}\nИнфо: {user_info}"
+    text = f"💬 Новый чат поддержки!\nID: `{chat_id}`\nИнфо: {user_info}"
     send_telegram_message(YOUR_TELEGRAM_ID, text)
 
     return jsonify({"chat_id": chat_id})
@@ -92,7 +92,7 @@ def submit_payment():
     order_id = len(orders) + 1
     orders[order_id] = {'name': user_name, 'status': 'pending'}
 
-    text = f"🔔 Новая заявка!\nID: {order_id}\nИмя: {user_name}"
+    text = f"🔔 Новая заявка!\nID: `{order_id}`\nИмя: {user_name}"
     keyboard = {
         "inline_keyboard": [
             [{"text": "✅ Подтвердить", "callback_data": f"confirm_{order_id}"}],
