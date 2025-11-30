@@ -24,6 +24,38 @@ def send_telegram_message(chat_id, text, reply_markup=None):
     requests.post(url, json=data)
 
 # === Маршруты ===
+@app.route('/support/send', methods=['POST'])
+def send_support_message():
+    data = request.json
+    chat_id = data.get('chat_id')
+    text = data.get('text', '').strip()
+
+    if not chat_id or not text:
+        return jsonify({"error": "Требуется chat_id и text"}), 400
+
+    chat_file = f"{SUPPORT_DIR}/{chat_id}.json"
+    if not os.path.exists(chat_file):
+        return jsonify({"error": "Чат не найден"}), 404
+
+    # Загружаем чат и добавляем сообщение
+    with open(chat_file, "r+", encoding="utf-8") as f:
+        chat = json.load(f)
+        chat["messages"].append({
+            "from": "user",
+            "text": text,
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        f.seek(0)
+        json.dump(chat, f, ensure_ascii=False, indent=2)
+        f.truncate()
+
+    # 💡 Опционально: уведомить админа в Telegram
+    send_telegram_message(
+        YOUR_TELEGRAM_ID,
+        f"📩 Новое сообщение в чате {chat_id}:\n\n{text}"
+    )
+
+    return jsonify({"status": "ok"})
 
 @app.route('/')
 def index():
