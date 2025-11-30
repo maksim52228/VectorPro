@@ -52,7 +52,8 @@ def send_support_message():
     # 💡 Опционально: уведомить админа в Telegram
     send_telegram_message(
         YOUR_TELEGRAM_ID,
-        f"📩 Новое сообщение в чате>{chat_id}:\n\n{text}"
+        f"📩 Новое сообщение в чате:\nID: <code>{chat_id}</code> \n\n{text}",
+
     )
 
     return jsonify({"status": "ok"})
