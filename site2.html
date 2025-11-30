@@ -929,7 +929,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('supportMessages');
     const chatInfo = document.getElementById('supportChatInfo');
     const loadingEl = document.getElementById('supportLoading');
+    // === ОТПРАВКА СООБЩЕНИЯ ПОЛЬЗОВАТЕЛЕМ ===
+    const messageInput = document.getElementById('supportUserMessage');
+    const sendMsgBtn = document.getElementById('sendSupportMessageBtn');
 
+    if (sendMsgBtn) {
+        sendMsgBtn.addEventListener('click', async () => {
+            const text = messageInput?.value.trim();
+            if (!text || !currentChatId) return;
+
+            try {
+                const res = await fetch('https://vectorpro.onrender.com/support/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: currentChatId, text })
+                });
+
+                if (res.ok) {
+                    messageInput.value = '';
+                    loadChat(); // обновить чат
+                } else {
+                    alert('Не удалось отправить сообщение.');
+                }
+            } catch (err) {
+                alert('Ошибка подключения.');
+                console.error(err);
+            }
+        });
+    }
+
+    // Авто-фокус и отображение поля ввода при открытом чате
+    function showInputIfNeeded() {
+        const inputContainer = document.querySelector('[id*="supportInputForm"]');
+        if (inputContainer) {
+            inputContainer.style.display = currentChatId ? 'flex' : 'none';
+        }
+    }
+
+    // Обновим loadChat, чтобы он показывал поле ввода
+    const originalLoadChat = loadChat;
+    loadChat = function() {
+        originalLoadChat();
+        showInputIfNeeded();
+    };
     let currentChatId = localStorage.getItem('supportChatId') || null;
 
     function loadChat() {
