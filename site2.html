@@ -1239,6 +1239,10 @@ document.addEventListener('DOMContentLoaded', function() {
             <input type="text" id="supportUserInfo" placeholder="Ваше имя или Telegram (необязательно)" style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:white; margin-bottom:0.5rem;">
             <button id="startSupportChatBtn" class="btn" style="padding:10px;">Начать чат</button>
         </div>
+        <div id="supportInputForm" style="display:none; flex-direction:row; gap:0.5rem; margin-top:0.5rem; padding:0.5rem 1rem; background:rgba(0,0,0,0.2); border-radius:10px;">
+            <input type="text" id="supportUserMessage" placeholder="Введите сообщение..." style="flex:1; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:white; border:none; outline:none;">
+            <button id="sendSupportMessageBtn" class="btn" style="padding:10px; width:auto; font-size:0.9rem; min-width:80px;">Отправить</button>
+        </div>
 
         <div id="supportLoading" style="display:none; text-align:center; color:var(--gray);">Загрузка...</div>
     </div>
