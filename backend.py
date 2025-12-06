@@ -175,7 +175,11 @@ def telegram_webhook():
                 send_telegram_message(YOUR_TELEGRAM_ID, "Неверный формат. Пример:\n`a1b2c3d4 Привет!`",)
 
     return 'OK'
-
+    
+@app.route('/health')
+def health():
+    return 'OK', 200
+    
 @app.route('/support/messages/<chat_id>')
 def get_support_messages(chat_id):
     chat_file = f"{SUPPORT_DIR}/{chat_id}.json"
