@@ -23,6 +23,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css    ">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js    "></script>
     <style>
+        /* блокировка по горизонтали */
+        html, body {
+        overflow-x: hidden;
+        width: 100%;
+    }
         /* CSS переменные */
         :root {
             --starFieldWidth: 2560;
@@ -53,12 +58,12 @@
         }
 
         html {
-            height: 100%;
+            overflow-x: hidden;
         }
 
         body {
             width: 100%;
-            height: 100%;
+
             margin: 0;
             overflow-x: hidden;
             color: var(--light);
@@ -112,16 +117,16 @@
         }
 
         .shooting-stars {
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    border-top-left-radius: 50%;
-    border-top-right-radius: 50%;
-    background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,1));
-    animation: animShootingStar 3s linear forwards; /* ⚠️ без infinite! */
-    opacity: 0; /* изначально невидима */
-    z-index: 4;
-}
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        border-top-left-radius: 50%;
+        border-top-right-radius: 50%;
+        background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,1));
+        animation: animShootingStar 3s linear forwards; /* ⚠️ без infinite! */
+        opacity: 0; /* изначально невидима */
+        z-index: 4;
+    }
 
         /* Анимации звезд */
         @keyframes animStar {
@@ -167,7 +172,7 @@
 
         /* Основные секции */
         section {
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -455,12 +460,12 @@
         .support-fab {
         position: fixed;
         right: 24px;        /* отступ от правого края */
-        top: 55%;           /* чуть ниже центра (50% = центр) */
+        top: 80%;           /* чуть ниже центра (50% = центр) */
         z-index: 1000;
         width: 60px;
         height: 60px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent), #cc1e55);
+        background: linear-gradient(135deg, #00D4FF, #8D00F5);
         color: white;
         border: none;
         cursor: pointer;
@@ -468,7 +473,7 @@
         justify-content: center;
         align-items: center;
         font-size: 24px;
-        box-shadow: 0 4px 12px rgba(255, 46, 99, 0.4);
+        box-shadow: 0 4px 12px rgba(147, 0, 255, 0.4);
         transition: all 0.3s ease;
         padding: 0;
     }
@@ -480,7 +485,7 @@
         justify-content: flex-start;
         padding-left: 20px;
         font-size: 16px;
-        box-shadow: 0 6px 20px rgba(255, 46, 99, 0.6);
+        box-shadow: 0 6px 20px rgba(147, 0, 255, 0.6);
     }
 
     .support-fab:hover::after {
@@ -606,10 +611,16 @@
                     <i class="fas fa-crown"></i>
                 </div>
                 <h3 style="color: var(--accent); font-size: 1.6rem;">VectorPro</h3>
-                <p style="color: var(--gray); font-size: 1.1rem; margin: 1rem 0;">Премиум версия</p>
+                <p style="color: var(--gray); font-size: 1.15rem; margin: 1rem 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+
+
+                    Премиум-доступ всего за
+
+                    100 ₽
+                </p>
                 <button id="openPaymentModal" class="btn"
                         style="width: 100%; margin-top: 1.5rem; background: linear-gradient(135deg, var(--accent), #cc1e55); color: white; display: inline-block; text-align: center; border: none; cursor: pointer;">
-                    Скачать Pro
+                    Скачать Pro за 100 ₽
                 </button>
             </div>
         </div>
@@ -914,6 +925,19 @@ document.addEventListener('DOMContentLoaded', function() {
             shootingStarsContainer.appendChild(shootingStar);
         }
     }
+    // Открытие чата поддержки из окна оплаты
+    const openSupportFromPayment = document.getElementById('openSupportFromPayment');
+    if (openSupportFromPayment) {
+        openSupportFromPayment.addEventListener('click', () => {
+            const paymentModal = document.getElementById('paymentModal');
+            const supportModal = document.getElementById('supportChatModal');
+            if (paymentModal) paymentModal.style.display = 'none';
+            if (supportModal) supportModal.style.display = 'flex';
+            loadChat(); // загружает текущий чат или предлагает создать
+        });
+    }
+    let checkInterval = null;
+    let supportSuggestionTimer = null;
 
     // Анимации
     initScrollAnimations();
@@ -1078,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModalBtn.addEventListener('click', () => {
             paymentModal.style.display = 'none';
         });
-        let checkInterval = null;
+
 
         submitPaymentBtn.addEventListener('click', async () => {
             const name = userNameInput.value.trim();
@@ -1149,6 +1173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 window.location.href = `https://vectorpro.onrender.com/download/${orderId}`;
                             };
                             afterSubmitMessage.appendChild(downloadBtn);
+                            if (supportSuggestionTimer) clearTimeout(supportSuggestionTimer);
 
                         } else if (attempts >= maxAttempts || result.status === 'rejected') {
                             clearInterval(checkInterval);
@@ -1182,6 +1207,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }, 10000); // Каждые 10 секунд
 
+                // === ЗАПУСК ТАЙМЕРА ПОДДЕРЖКИ ЧЕРЕЗ 1 МИНУТУ ===
+                supportSuggestionTimer = setTimeout(() => {
+                    const supportSuggestion = document.getElementById('supportSuggestion');
+                    if (supportSuggestion) {
+                        supportSuggestion.style.display = 'block';
+                    }
+                }, 60000);
             } catch (err) {
                 alert('Не удалось подключиться к серверу.');
                 console.error(err);
@@ -1195,6 +1227,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 clearInterval(checkInterval);
                 checkInterval = null;
             }
+            if (supportSuggestionTimer) clearTimeout(supportSuggestionTimer);
         });
 
 
@@ -1211,8 +1244,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <p style="color:var(--gray); margin-bottom:1.5rem;">Введите ваше имя, чтобы мы могли подтвердить оплату:</p>
         <input type="text" id="userNameInput" placeholder="Ваше имя" style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3); color:white; margin-bottom:1.5rem;">
 
-        <p style="color:var(--gray); margin:1.5rem 0;">Отсканируйте QR-код для оплаты:</p>
-        <img src="siteicon.jpg" alt="QR для оплаты" style="width:200px; height:200px; border:2px solid var(--secondary); border-radius:10px; margin:1rem auto; display:block;">
+        <p style="color: var(--gray); margin: 1.5rem 0; font-size: 1.1rem;">
+            Просто отсканируйте QR и отправьте 100 ₽
+        </p>
+        <img src="qr.jpg" alt="QR для оплаты" style="width:200px; height:200px; border:2px solid var(--secondary); border-radius:10px; margin:1rem auto; display:block;">
 
         <button id="submitPaymentBtn" class="btn" style="width:100%; margin-top:1.5rem; background:linear-gradient(135deg, var(--primary), var(--secondary)); color:#0A0A0F; border:none; padding:12px; border-radius:50px;">
             Я оплатил
@@ -1222,6 +1257,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <p>Ваш ID заявки: <strong id="orderIdDisplay"></strong></p>
 
 
+        </div>
+        <div id="supportSuggestion" style="display:none; margin-top:1.5rem; color:var(--gray); font-size:0.95rem;">
+            <p>Оплата всё ещё не подтверждена?<br>
+               <button id="openSupportFromPayment" class="btn" style="margin-top:0.8rem; padding:8px 16px; font-size:0.95rem; background:linear-gradient(135deg, var(--primary), var(--secondary)); color:#0A0A0F; border:none; border-radius:50px;">
+                   Написать в поддержку
+               </button>
+            </p>
         </div>
     </div>
 </div>
@@ -1239,6 +1281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <input type="text" id="supportUserInfo" placeholder="Ваше имя или Telegram (необязательно)" style="padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:white; margin-bottom:0.5rem;">
             <button id="startSupportChatBtn" class="btn" style="padding:10px;">Начать чат</button>
         </div>
+
         <div id="supportInputForm" style="display:none; flex-direction:row; gap:0.5rem; margin-top:0.5rem; padding:0.5rem 1rem; background:rgba(0,0,0,0.2); border-radius:10px;">
             <input type="text" id="supportUserMessage" placeholder="Введите сообщение..." style="flex:1; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:white; border:none; outline:none;">
             <button id="sendSupportMessageBtn" class="btn" style="padding:10px; width:auto; font-size:0.9rem; min-width:80px;">Отправить</button>
