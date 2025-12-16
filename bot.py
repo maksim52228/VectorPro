@@ -9,6 +9,10 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import json
 from flask import Flask, request
+import nest_asyncio
+
+nest_asyncio.apply()
+
 
 # === Конфигурация ===
 TOKEN = os.getenv("BOT_TOKEN", "7816544590:AAGrp0hyOvLcdtT-ROwjQER1ANks6jv9cyY")
@@ -124,6 +128,7 @@ init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=PORT)
+
 
 
 
