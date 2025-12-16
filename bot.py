@@ -103,10 +103,5 @@ def main():
     application.run_polling()
 
 
-def main():
-    init_db()
-    application = ApplicationBuilder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.VOICE, handle_voice))
-    application.add_handler(CommandHandler("statistic", statistic))
-    application.run_polling()
+if __name__ == "__main__":
+    main()
