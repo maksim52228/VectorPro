@@ -4,3 +4,4 @@ requests==2.32.3
 SpeechRecognition
 pydub
 python-telegram-bot
+nest-asyncio==1.6.0
