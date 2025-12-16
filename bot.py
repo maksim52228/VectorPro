@@ -97,8 +97,11 @@ app = Flask(__name__)
 
 @app.route('/telegram-webhook', methods=['POST'])
 def telegram_webhook():
-    json_str = request.get_data().decode('utf-8')
-    update = Update.de_json(json_str, application.bot)
+    # Получаем тело запроса как байты и парсим в словарь
+    update_dict = json.loads(request.get_data())
+    # Преобразуем в объект Update
+    update = Update.de_json(update_dict, application.bot)
+    # Обрабатываем асинхронно
     asyncio.run(application.process_update(update))
     return 'OK', 200
 
@@ -119,4 +122,5 @@ init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=PORT)
+
 
