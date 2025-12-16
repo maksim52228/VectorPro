@@ -102,6 +102,14 @@ def telegram_webhook():
     asyncio.run(application.process_update(update))
     return 'OK', 200
 
+@app.route('/')
+def index():
+    return 'Bot webhook active.', 200
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
+
 @app.route('/health')
 def health():
     return 'OK', 200
@@ -111,3 +119,4 @@ init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=PORT)
+
